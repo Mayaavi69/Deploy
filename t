@@ -51,6 +51,13 @@ If you're still experiencing CORS issues:
 Check Apache error logs:
 bashCopysudo tail -f /var/log/apache2/error.log
 
+
+
+Job for apache2.service failed because the control process exited with error code.
+See "systemctl status apache2.service" and "journalctl -xeu apache2.service" for details.
+
+this is the error
+
 Ensure that your Flowise application is not overriding these headers.
 If you're using a specific path for your API, you may need to adjust the configuration to target that path specifically.
 If you're using HTTPS, make sure you've configured CORS for HTTPS as well.
