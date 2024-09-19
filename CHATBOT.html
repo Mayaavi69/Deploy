@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive AI Chatbot</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+        }
+        #chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #chat-header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+        }
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            max-width: 70%;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            line-height: 1.4;
+            position: relative;
+        }
+        .user-message {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+        }
+        .bot-message {
+            align-self: flex-start;
+            background-color: #e5e5ea;
+        }
+        #user-input-container {
+            display: flex;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #user-input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 30px;
+            outline: none;
+        }
+        #send-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-left: 10px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #send-button:hover {
+            background-color: #45a049;
+        }
+        .typing-indicator {
+            align-self: flex-start;
+            background-color: #e5e5ea;
+            border-radius: 20px;
+            padding: 10px 15px;
+            display: none;
+        }
+        .typing-indicator span {
+            height: 10px;
+            width: 10px;
+            float: left;
+            margin: 0 1px;
+            background-color: #9E9EA1;
+            display: block;
+            border-radius: 50%;
+            opacity: 0.4;
+        }
+        .typing-indicator span:nth-of-type(1) { animation: 1s blink infinite 0.3333s; }
+        .typing-indicator span:nth-of-type(2) { animation: 1s blink infinite 0.6666s; }
+        .typing-indicator span:nth-of-type(3) { animation: 1s blink infinite 0.9999s; }
+        @keyframes blink {
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-header">AI Chatbot</div>
+        <div id="chat-messages">
+            <div class="message bot-message">Hello! How can I assist you today?</div>
+        </div>
+        <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div id="user-input-container">
+            <input type="text" id="user-input" placeholder="Type your message here...">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+    const chatMessages = document.getElementById('chat-messages');
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
+    const typingIndicator = document.querySelector('.typing-indicator');
+
+    const API_URL = "https://flowiseadk-cbeefab22e8b.herokuapp.com/api/v1/prediction/e40a7a40-96ab-4590-acbc-bbcf66b529be";
+
+    function addMessage(text, isUser) {
+        const messageDiv = document.createElement('div');
+        messageDiv.textContent = text;
+        messageDiv.className = isUser ? 'message user-message' : 'message bot-message';
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+        typingIndicator.style.display = 'block';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        typingIndicator.style.display = 'none';
+    }
+
+    async function query(payload) {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
+        }
+    }
+
+    async function sendMessage() {
+        const message = userInput.value.trim();
+        if (message === '') return;
+
+        addMessage(message, true);
+        userInput.value = '';
+        showTypingIndicator();
+
+        try {
+            const response = await query({ "question": message });
+            console.log('API Response:', response);
+
+            hideTypingIndicator();
+            // Adjust this based on the actual structure of your API response
+            const aiResponse = response.answer || response.text || JSON.stringify(response);
+            addMessage(aiResponse, false);
+        } catch (error) {
+            console.error('Error:', error);
+            hideTypingIndicator();
+            addMessage(`Error: ${error.message}. Please try again.`, false);
+        }
+    }
+
+    sendButton.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendMessage();
+    });
+    </script>
+</body>
+</html>
