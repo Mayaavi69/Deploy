@@ -1,0 +1,74 @@
+# This is the main Apache server configuration file for Flowise with CORS handling
+
+# Global configuration
+Timeout 300
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 5
+
+# User and group settings
+User ${APACHE_RUN_USER}
+Group ${APACHE_RUN_GROUP}
+
+# Logging configuration
+ErrorLog ${APACHE_LOG_DIR}/error.log
+LogLevel warn
+
+# Include module configuration
+IncludeOptional mods-enabled/*.load
+IncludeOptional mods-enabled/*.conf
+
+# Include list of ports to listen on
+Include ports.conf
+
+# Default directory settings
+<Directory />
+    Options FollowSymLinks
+    AllowOverride None
+    Require all denied
+</Directory>
+
+<Directory /var/www/>
+    Options Indexes FollowSymLinks
+    AllowOverride None
+    Require all granted
+</Directory>
+
+# Main web root directory configuration
+<Directory /var/www/html>
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+    
+    # CORS Headers
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS, DELETE, PUT"
+    Header always set Access-Control-Max-Age "1000"
+    Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token"
+
+    # Handle OPTIONS method for CORS preflight requests
+    RewriteEngine On
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ $1 [R=200,L]
+</Directory>
+
+# Proxy configuration for Flowise
+ProxyPass / http://localhost:3000/
+ProxyPassReverse / http://localhost:3000/
+
+# .htaccess handling
+AccessFileName .htaccess
+<FilesMatch "^\.ht">
+    Require all denied
+</FilesMatch>
+
+# Logging formats
+LogFormat "%v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined
+LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%h %l %u %t \"%r\" %>s %O" common
+LogFormat "%{Referer}i -> %U" referer
+LogFormat "%{User-agent}i" agent
+
+# Include other configuration files
+IncludeOptional conf-enabled/*.conf
+IncludeOptional sites-enabled/*.conf
